@@ -1,0 +1,28 @@
+{
+  "format_version": 1,
+  "id": "ownership/why-not-copy",
+  "lesson": "ownership/move-semantics",
+  "prompt": "Why is `i32` `Copy` but `String` is not?",
+  "options": [
+    {
+      "text": "`String` owns a heap allocation, so two owners would both try to free it.",
+      "correct": true
+    },
+    {
+      "text": "`String` is larger, and Rust only copies small types.",
+      "correct": false,
+      "why_wrong": "Size is not the rule. A `[u8; 4096]` is `Copy` and far bigger than a `String`, which is three words on the stack. What matters is whether the type owns a resource."
+    },
+    {
+      "text": "`String` is heap-allocated and heap values can never be copied.",
+      "correct": false,
+      "why_wrong": "They can - that is what `.clone()` does. The point is that Rust will not do it implicitly, because it costs an allocation and a memcpy."
+    },
+    {
+      "text": "`Copy` only applies to primitive types built into the language.",
+      "correct": false,
+      "why_wrong": "Any type can derive `Copy` if all of its fields are `Copy`. Your own structs can be `Copy`; `String` cannot, because of what it owns."
+    }
+  ],
+  "explanation": "`Copy` means duplicating the bits is a complete, correct duplicate of the value. That holds for an `i32`. For a `String` the bits are a pointer, a length, and a capacity - duplicating them gives you two owners of one allocation, and two frees. The rule is about ownership of a resource, not about size."
+}

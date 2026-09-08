@@ -1,0 +1,148 @@
+{
+  "format_version": 1,
+  "id": "ownership/move-semantics",
+  "title": "Move semantics",
+  "summary": "Assignment moves ownership. Learn to read E0382 and pick between borrowing, cloning, and restructuring.",
+  "topics": [
+    "ownership"
+  ],
+  "lifecycle": "official",
+  "body": "move-semantics.md",
+  "visualisation": {
+    "kind": "ownership",
+    "code": "fn main() {\n    let a = String::from(\"hello\");\n    let b = a;\n    println!(\"{b}\");\n}\n",
+    "steps": [
+      {
+        "line": 2,
+        "note": "`a` owns the String. Three words on the stack point at heap text.",
+        "bindings": [
+          {
+            "name": "a",
+            "state": "owns"
+          }
+        ]
+      },
+      {
+        "line": 3,
+        "note": "The three stack words are copied into `b`. The heap text is not copied, and `a` is no longer usable.",
+        "bindings": [
+          {
+            "name": "a",
+            "state": "moved"
+          },
+          {
+            "name": "b",
+            "state": "owns"
+          }
+        ]
+      },
+      {
+        "line": 4,
+        "note": "`b` is read through a shared borrow. Nothing moves.",
+        "bindings": [
+          {
+            "name": "a",
+            "state": "moved"
+          },
+          {
+            "name": "b",
+            "state": "owns"
+          }
+        ]
+      },
+      {
+        "line": 5,
+        "note": "`b` goes out of scope and the heap text is freed exactly once.",
+        "bindings": [
+          {
+            "name": "a",
+            "state": "moved"
+          },
+          {
+            "name": "b",
+            "state": "dropped"
+          }
+        ]
+      }
+    ]
+  },
+  "examples": [
+    {
+      "id": "move-then-use",
+      "caption": "The canonical E0382. Predict the error before you run it.",
+      "code": "fn main() {\n    let a = String::from(\"hello\");\n    let b = a;\n    println!(\"{a}\");\n    println!(\"{b}\");\n}\n",
+      "expect": {
+        "kind": "compile_error",
+        "code": "E0382"
+      }
+    },
+    {
+      "id": "copy-is-not-a-move",
+      "caption": "An i32 is Copy, so the same shape compiles and prints both.",
+      "code": "fn main() {\n    let a = 5;\n    let b = a;\n    println!(\"{a} {b}\");\n}\n",
+      "expect": {
+        "kind": "runs",
+        "stdout": "5 5"
+      }
+    },
+    {
+      "id": "borrow-instead",
+      "caption": "Borrowing lets a function read the value without taking it.",
+      "code": "fn shout(s: &str) -> String {\n    s.to_uppercase()\n}\n\nfn main() {\n    let greeting = String::from(\"hello\");\n    let loud = shout(&greeting);\n    println!(\"{greeting} -> {loud}\");\n}\n",
+      "expect": {
+        "kind": "runs",
+        "stdout": "hello -> HELLO"
+      }
+    },
+    {
+      "id": "passing-by-value-moves",
+      "caption": "Passing by value is an assignment into the parameter, so it moves too.",
+      "code": "fn consume(s: String) -> usize {\n    s.len()\n}\n\nfn main() {\n    let s = String::from(\"hi\");\n    let n = consume(s);\n    println!(\"{n} {s}\");\n}\n",
+      "expect": {
+        "kind": "compile_error",
+        "code": "E0382"
+      }
+    },
+    {
+      "id": "clone-when-you-mean-it",
+      "caption": "Cloning is allowed. It is a cost you chose, and it is visible in the code.",
+      "code": "fn consume(s: String) -> usize {\n    s.len()\n}\n\nfn main() {\n    let s = String::from(\"hi\");\n    let n = consume(s.clone());\n    println!(\"{n} {s}\");\n}\n",
+      "expect": {
+        "kind": "runs",
+        "stdout": "2 hi"
+      }
+    }
+  ],
+  "quizzes": [
+    "ownership/predict-move-error",
+    "ownership/why-not-copy"
+  ],
+  "cheatsheets": [
+    "ownership"
+  ],
+  "oss_examples": [
+    "ownership/clap-builder-consumes-self",
+    "ownership/ripgrep-borrows-haystack"
+  ],
+  "trials": [
+    "ownership-move-or-borrow"
+  ],
+  "references": [
+    {
+      "title": "The Rust Programming Language, ch. 4: Understanding Ownership",
+      "url": "https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html"
+    },
+    {
+      "title": "Rust By Example: Ownership and moves",
+      "url": "https://doc.rust-lang.org/rust-by-example/scope/move.html"
+    },
+    {
+      "title": "rustc error index: E0382",
+      "url": "https://doc.rust-lang.org/error_codes/E0382.html"
+    },
+    {
+      "title": "The Rust Reference: Destructors",
+      "url": "https://doc.rust-lang.org/reference/destructors.html"
+    }
+  ]
+}

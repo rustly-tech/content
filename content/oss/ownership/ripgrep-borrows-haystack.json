@@ -1,0 +1,17 @@
+{
+  "format_version": 1,
+  "id": "ownership/ripgrep-borrows-haystack",
+  "caption": "Searching borrows the haystack rather than taking it, so the caller keeps its buffer and no copy is made",
+  "repository": "BurntSushi/ripgrep",
+  "commit": "3fce3b5bb0236da2df6d99672afb8a719642eca7",
+  "path": "crates/matcher/src/lib.rs",
+  "line_start": 620,
+  "line_end": 623,
+  "license": "Unlicense OR MIT",
+  "attribution": "Andrew Gallant, BurntSushi/ripgrep",
+  "topics": [
+    "borrowing",
+    "ownership"
+  ],
+  "simplified": "fn find(haystack: &[u8], needle: u8) -> Option<usize> {\n    haystack.iter().position(|b| *b == needle)\n}\n\nfn main() {\n    let buffer = vec![1u8, 2, 3];\n    println!(\"{:?}\", find(&buffer, 2));\n    println!(\"{}\", buffer.len());\n}\n"
+}

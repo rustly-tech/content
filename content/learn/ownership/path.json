@@ -1,0 +1,10 @@
+{
+  "format_version": 1,
+  "id": "ownership",
+  "title": "Ownership",
+  "summary": "Who owns a value, what happens when you assign it, and why the compiler stops you from using it afterwards.",
+  "topics": ["ownership", "borrowing"],
+  "lifecycle": "official",
+  "lessons": ["ownership/move-semantics"],
+  "prerequisites": []
+}

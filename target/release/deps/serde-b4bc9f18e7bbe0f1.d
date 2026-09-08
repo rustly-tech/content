@@ -1,0 +1,14 @@
+/Users/ducnguyen/Documents/Rustly/content/target/release/deps/serde-b4bc9f18e7bbe0f1.d: /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs /Users/ducnguyen/Documents/Rustly/content/target/release/build/serde-76b509690b2e999e/out/private.rs
+
+/Users/ducnguyen/Documents/Rustly/content/target/release/deps/libserde-b4bc9f18e7bbe0f1.rlib: /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs /Users/ducnguyen/Documents/Rustly/content/target/release/build/serde-76b509690b2e999e/out/private.rs
+
+/Users/ducnguyen/Documents/Rustly/content/target/release/deps/libserde-b4bc9f18e7bbe0f1.rmeta: /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs /Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs /Users/ducnguyen/Documents/Rustly/content/target/release/build/serde-76b509690b2e999e/out/private.rs
+
+/Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/lib.rs:
+/Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/integer128.rs:
+/Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/mod.rs:
+/Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs:
+/Users/ducnguyen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/ser.rs:
+/Users/ducnguyen/Documents/Rustly/content/target/release/build/serde-76b509690b2e999e/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/ducnguyen/Documents/Rustly/content/target/release/build/serde-76b509690b2e999e/out

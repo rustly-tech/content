@@ -1,0 +1,16 @@
+{
+  "format_version": 1,
+  "id": "ownership/clap-builder-consumes-self",
+  "caption": "A builder method takes `self` by value and returns it, so calls chain and there is never a second owner",
+  "repository": "clap-rs/clap",
+  "commit": "af3044228bd76a87a3f46a3c7c3343563c059527",
+  "path": "clap_builder/src/builder/command.rs",
+  "line_start": 170,
+  "line_end": 175,
+  "license": "MIT OR Apache-2.0",
+  "attribution": "clap contributors, clap-rs/clap",
+  "topics": [
+    "ownership"
+  ],
+  "simplified": "struct Command { args: Vec<String> }\n\nimpl Command {\n    fn arg(mut self, a: String) -> Self {\n        self.args.push(a);\n        self\n    }\n}\n\nfn main() {\n    let cmd = Command { args: vec![] }.arg(\"--verbose\".into());\n    println!(\"{}\", cmd.args.len());\n}\n"
+}

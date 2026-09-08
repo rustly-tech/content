@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OssExample",
+  "description": "A curated example from an open-source Rust project.\n\nEvery field is required because attribution is not optional and a moving\nbranch is not a citation.",
+  "type": "object",
+  "properties": {
+    "attribution": {
+      "description": "Attribution line to display.",
+      "type": "string"
+    },
+    "caption": {
+      "description": "What the reader should notice in this code.",
+      "type": "string"
+    },
+    "commit": {
+      "description": "The exact commit this was taken from. Forty hex characters, never a branch.",
+      "type": "string"
+    },
+    "format_version": {
+      "description": "Format version.",
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "id": {
+      "description": "Stable identifier.",
+      "type": "string"
+    },
+    "license": {
+      "description": "Upstream SPDX license expression.",
+      "type": "string"
+    },
+    "line_end": {
+      "description": "Last line of the excerpt, inclusive.",
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "line_start": {
+      "description": "First line of the excerpt, 1-based and inclusive.",
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "path": {
+      "description": "Path within the repository at that commit.",
+      "type": "string"
+    },
+    "repository": {
+      "description": "Upstream repository, `owner/name`.",
+      "type": "string"
+    },
+    "simplified": {
+      "description": "A simplified rewrite of the same idea, for readers not ready for the original.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "topics": {
+      "description": "Concept tags.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Topic"
+      }
+    }
+  },
+  "required": [
+    "format_version",
+    "id",
+    "caption",
+    "repository",
+    "commit",
+    "path",
+    "line_start",
+    "line_end",
+    "license",
+    "attribution",
+    "topics"
+  ],
+  "$defs": {
+    "Topic": {
+      "description": "A topic tag.",
+      "oneOf": [
+        {
+          "description": "Ownership, moves, `Copy`.",
+          "type": "string",
+          "const": "ownership"
+        },
+        {
+          "description": "Shared and unique borrows.",
+          "type": "string",
+          "const": "borrowing"
+        },
+        {
+          "description": "Lifetimes and variance.",
+          "type": "string",
+          "const": "lifetimes"
+        },
+        {
+          "description": "Traits and generics.",
+          "type": "string",
+          "const": "traits"
+        },
+        {
+          "description": "Enums, pattern matching, `Option`/`Result`.",
+          "type": "string",
+          "const": "enums"
+        },
+        {
+          "description": "Collections and iterators.",
+          "type": "string",
+          "const": "collections"
+        },
+        {
+          "description": "Error handling.",
+          "type": "string",
+          "const": "errors"
+        },
+        {
+          "description": "Concurrency and `Send`/`Sync`.",
+          "type": "string",
+          "const": "concurrency"
+        },
+        {
+          "description": "Unsafe and FFI.",
+          "type": "string",
+          "const": "unsafe"
+        },
+        {
+          "description": "Modules, crates, Cargo.",
+          "type": "string",
+          "const": "tooling"
+        }
+      ]
+    }
+  }
+}

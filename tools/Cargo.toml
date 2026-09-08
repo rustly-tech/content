@@ -1,0 +1,26 @@
+[package]
+name = "rustly-content"
+description = "Validation, example compilation, reference-solution checking, and search-index generation for Rustly content."
+version = "0.1.0"
+edition = "2021"
+# MSRV is set by our dependency floor and enforced by CI.
+rust-version = "1.88"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rustly-tech/content"
+authors = ["Rustly contributors"]
+
+[[bin]]
+name = "rustly-content"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"

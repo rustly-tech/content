@@ -1,0 +1,418 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lesson",
+  "description": "A lesson.",
+  "type": "object",
+  "properties": {
+    "body": {
+      "description": "Path to the Markdown body, relative to the lesson file.",
+      "type": "string"
+    },
+    "cheatsheets": {
+      "description": "Cheatsheet ids to surface alongside this lesson.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "examples": {
+      "description": "Runnable examples.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Example"
+      }
+    },
+    "format_version": {
+      "description": "Format version.",
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "id": {
+      "description": "Stable identifier, e.g. `ownership/move-semantics`.",
+      "type": "string"
+    },
+    "lifecycle": {
+      "description": "Editorial state.",
+      "$ref": "#/$defs/Lifecycle"
+    },
+    "oss_examples": {
+      "description": "OSS example ids to surface alongside this lesson.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "quizzes": {
+      "description": "Quiz ids attached to this lesson.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "references": {
+      "description": "References. Original prose only; these are sources, not sources of text.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Reference"
+      }
+    },
+    "summary": {
+      "description": "One-sentence summary.",
+      "type": "string"
+    },
+    "title": {
+      "description": "Human title.",
+      "type": "string"
+    },
+    "topics": {
+      "description": "Topics.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Topic"
+      }
+    },
+    "trials": {
+      "description": "Trial slugs this lesson prepares the reader for.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "visualisation": {
+      "description": "Mental-model visualisation to render, if any.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Visualisation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "format_version",
+    "id",
+    "title",
+    "summary",
+    "topics",
+    "lifecycle",
+    "body"
+  ],
+  "$defs": {
+    "Binding": {
+      "description": "A binding's state at one step.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Variable name.",
+          "type": "string"
+        },
+        "state": {
+          "description": "What it holds, or why it cannot be used.",
+          "$ref": "#/$defs/BindingState"
+        }
+      },
+      "required": [
+        "name",
+        "state"
+      ]
+    },
+    "BindingState": {
+      "description": "What a binding is doing at a point in the program.",
+      "oneOf": [
+        {
+          "description": "Owns its value.",
+          "type": "string",
+          "const": "owns"
+        },
+        {
+          "description": "Was moved out of and can no longer be used.",
+          "type": "string",
+          "const": "moved"
+        },
+        {
+          "description": "Holds a shared reference.",
+          "type": "string",
+          "const": "borrowed_shared"
+        },
+        {
+          "description": "Holds a unique reference.",
+          "type": "string",
+          "const": "borrowed_unique"
+        },
+        {
+          "description": "Out of scope; its value has been dropped.",
+          "type": "string",
+          "const": "dropped"
+        },
+        {
+          "description": "Declared but not yet initialised.",
+          "type": "string",
+          "const": "uninitialised"
+        }
+      ]
+    },
+    "Example": {
+      "description": "A runnable code example inside a lesson.",
+      "type": "object",
+      "properties": {
+        "caption": {
+          "description": "One-line description of what the reader should notice.",
+          "type": "string"
+        },
+        "code": {
+          "description": "The code, as a complete compilable program.",
+          "type": "string"
+        },
+        "expect": {
+          "description": "What it is expected to do.",
+          "$ref": "#/$defs/ExpectedOutcome"
+        },
+        "id": {
+          "description": "Identifier, unique within the lesson.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "caption",
+        "code",
+        "expect"
+      ]
+    },
+    "ExpectedOutcome": {
+      "description": "What a runnable example is expected to do when compiled.\n\nDeclaring the expectation is what makes a broken-on-purpose example testable.\nWithout it, CI cannot tell \"this example is meant to fail\" from \"this example\nis broken\", and the teaching value of a deliberate error is exactly that it\nis deliberate.",
+      "oneOf": [
+        {
+          "description": "Compiles and runs, producing this stdout.",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "runs"
+            },
+            "stdout": {
+              "description": "Expected stdout, compared after trimming trailing whitespace.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "stdout"
+          ]
+        },
+        {
+          "description": "Compiles cleanly. Output is not asserted.",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "compiles"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "description": "Fails to compile with this diagnostic code, e.g. `E0382`.\n\nThis is the backbone of predict-the-error teaching.",
+          "type": "object",
+          "properties": {
+            "code": {
+              "description": "The `rustc` error code the example must produce.",
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "const": "compile_error"
+            }
+          },
+          "required": [
+            "kind",
+            "code"
+          ]
+        }
+      ]
+    },
+    "Lifecycle": {
+      "description": "Editorial state.",
+      "oneOf": [
+        {
+          "description": "Author is still working; not published.",
+          "type": "string",
+          "const": "draft"
+        },
+        {
+          "description": "Published with a beta marker; does not count for ranking.",
+          "type": "string",
+          "const": "beta"
+        },
+        {
+          "description": "Reviewed and accepted.",
+          "type": "string",
+          "const": "verified"
+        },
+        {
+          "description": "Curated by maintainers as canonical for a concept.",
+          "type": "string",
+          "const": "official"
+        }
+      ]
+    },
+    "Reference": {
+      "description": "A citation.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "description": "What is being cited.",
+          "type": "string"
+        },
+        "url": {
+          "description": "Where to find it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "url"
+      ]
+    },
+    "Topic": {
+      "description": "A topic tag.",
+      "oneOf": [
+        {
+          "description": "Ownership, moves, `Copy`.",
+          "type": "string",
+          "const": "ownership"
+        },
+        {
+          "description": "Shared and unique borrows.",
+          "type": "string",
+          "const": "borrowing"
+        },
+        {
+          "description": "Lifetimes and variance.",
+          "type": "string",
+          "const": "lifetimes"
+        },
+        {
+          "description": "Traits and generics.",
+          "type": "string",
+          "const": "traits"
+        },
+        {
+          "description": "Enums, pattern matching, `Option`/`Result`.",
+          "type": "string",
+          "const": "enums"
+        },
+        {
+          "description": "Collections and iterators.",
+          "type": "string",
+          "const": "collections"
+        },
+        {
+          "description": "Error handling.",
+          "type": "string",
+          "const": "errors"
+        },
+        {
+          "description": "Concurrency and `Send`/`Sync`.",
+          "type": "string",
+          "const": "concurrency"
+        },
+        {
+          "description": "Unsafe and FFI.",
+          "type": "string",
+          "const": "unsafe"
+        },
+        {
+          "description": "Modules, crates, Cargo.",
+          "type": "string",
+          "const": "tooling"
+        }
+      ]
+    },
+    "Visualisation": {
+      "description": "A mental-model visualisation.",
+      "type": "object",
+      "properties": {
+        "code": {
+          "description": "The program the visualisation steps through.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Which visualisation the web application should render.",
+          "$ref": "#/$defs/VisualisationKind"
+        },
+        "steps": {
+          "description": "Ordered steps, each describing the state after one line executes.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/VisualisationStep"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "code",
+        "steps"
+      ]
+    },
+    "VisualisationKind": {
+      "description": "The kinds of visualisation the web application knows how to render.",
+      "oneOf": [
+        {
+          "description": "Stack and heap cells, showing who owns what.",
+          "type": "string",
+          "const": "ownership"
+        },
+        {
+          "description": "Active borrows over a span of lines.",
+          "type": "string",
+          "const": "borrows"
+        },
+        {
+          "description": "Lifetime extents.",
+          "type": "string",
+          "const": "lifetimes"
+        }
+      ]
+    },
+    "VisualisationStep": {
+      "description": "One step of a visualisation.",
+      "type": "object",
+      "properties": {
+        "bindings": {
+          "description": "Named bindings and their state after that line.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Binding"
+          }
+        },
+        "line": {
+          "description": "1-based line in [`Visualisation::code`] this step describes.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "note": {
+          "description": "What is true after that line runs.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "line",
+        "note"
+      ]
+    }
+  }
+}

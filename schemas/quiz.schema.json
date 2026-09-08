@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Quiz",
+  "description": "A micro quiz question.",
+  "type": "object",
+  "properties": {
+    "code": {
+      "description": "Optional code the question is about.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "explanation": {
+      "description": "Shown after answering, whether right or wrong.",
+      "type": "string"
+    },
+    "format_version": {
+      "description": "Format version.",
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "id": {
+      "description": "Stable identifier.",
+      "type": "string"
+    },
+    "lesson": {
+      "description": "Lesson this quiz belongs to.",
+      "type": "string"
+    },
+    "options": {
+      "description": "Answer options.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/QuizOption"
+      }
+    },
+    "prompt": {
+      "description": "The question.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "format_version",
+    "id",
+    "lesson",
+    "prompt",
+    "options",
+    "explanation"
+  ],
+  "$defs": {
+    "QuizOption": {
+      "description": "One quiz answer option.",
+      "type": "object",
+      "properties": {
+        "correct": {
+          "description": "Whether this option is correct.",
+          "type": "boolean"
+        },
+        "text": {
+          "description": "The option text.",
+          "type": "string"
+        },
+        "why_wrong": {
+          "description": "Why this option is wrong, shown when it is chosen.\n\nRequired for wrong options: \"incorrect\" teaches nothing, and a learner\nwho picked it had a reason worth addressing.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "text",
+        "correct"
+      ]
+    }
+  }
+}

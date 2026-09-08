@@ -1,0 +1,195 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  schedule:
+    # Weekly, because content rots without any commit: an OSS repository can be
+    # renamed or deleted, and a referenced URL can die.
+    - cron: "13 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  tools:
+    name: tooling
+    uses: rustly-tech/.github/.github/workflows/rust-ci.yml@main
+    with:
+      msrv: "1.88.0"
+      features: ""
+
+  content:
+    name: validate content
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          key: content
+          workspaces: tools
+
+      - name: Build the tooling
+        working-directory: tools
+        run: cargo build --release
+
+      - name: Schema, identifier, reference, and attribution validation
+        run: ./tools/target/release/rustly-content validate
+
+      # The Rust types are the schema. Committed JSON Schema files are generated
+      # from them, so drift is impossible rather than merely discouraged.
+      - name: Committed schemas match the Rust types
+        run: ./tools/target/release/rustly-content schemas --check
+
+      # Every runnable example declares what it does. A broken-on-purpose example
+      # must still fail in the way it claims, or predict-the-error teaches noise.
+      - name: Every example does what it claims
+        run: ./tools/target/release/rustly-content check-examples
+
+      # A Trial whose own reference solution fails is unshippable, and a starter
+      # that already compiles when it claims E0382 removes the whole exercise.
+      - name: Starters and reference solutions behave as declared
+        run: ./tools/target/release/rustly-content check-trials
+
+      - name: Build the static search index
+        run: |
+          ./tools/target/release/rustly-content index
+          test -s dist/search-index.json
+          echo "index size: $(wc -c < dist/search-index.json) bytes"
+
+      - name: Upload the index
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: search-index
+          path: dist/search-index.json
+          retention-days: 7
+
+  attribution:
+    name: OSS attribution is live
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      # Attribution metadata can be internally consistent and still wrong: the
+      # commit may not exist, the file may have been deleted, or the excerpt may
+      # run past the end of the file. This checks the claim against reality.
+      - name: Every pinned commit, path, and line range resolves
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          failures=0
+          for file in $(find content/oss -name '*.json'); do
+            repo=$(jq -r .repository "$file")
+            commit=$(jq -r .commit "$file")
+            path=$(jq -r .path "$file")
+            start=$(jq -r .line_start "$file")
+            end=$(jq -r .line_end "$file")
+            id=$(jq -r .id "$file")
+
+            if ! gh api "repos/$repo/commits/$commit" --jq .sha > /dev/null 2>&1; then
+              echo "::error file=$file::$id: commit $commit does not exist in $repo"
+              failures=$((failures + 1))
+              continue
+            fi
+
+            if ! gh api "repos/$repo/contents/$path?ref=$commit" --jq .content 2>/dev/null \
+                 | base64 -d > /tmp/excerpt.txt; then
+              echo "::error file=$file::$id: $path does not exist at $commit"
+              failures=$((failures + 1))
+              continue
+            fi
+
+            lines=$(wc -l < /tmp/excerpt.txt)
+            if [ "$end" -gt "$lines" ]; then
+              echo "::error file=$file::$id: line_end $end is past the end of $path ($lines lines)"
+              failures=$((failures + 1))
+              continue
+            fi
+            echo "ok  $id -> $repo@${commit:0:8} $path:$start-$end"
+          done
+          [ "$failures" -eq 0 ] || { echo "$failures attribution failure(s)"; exit 1; }
+
+  judge-compatibility:
+    name: Trials are judgeable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          key: judge-compat
+          workspaces: tools
+
+      - name: Build the tooling
+        working-directory: tools
+        run: cargo build --release
+
+      # `check-trials` proves a solution is correct. This proves the *package we
+      # emit* is one the judge accepts - a different claim, and the one that
+      # breaks silently when a format version moves.
+      - name: Every emitted package parses as a judge Trial package
+        run: |
+          set -euo pipefail
+          for trial in content/trials/*/trial.json; do
+            slug=$(jq -r .slug "$trial")
+            ./tools/target/release/rustly-content package "$slug" > "/tmp/$slug.json"
+            jq -e '.format_version == 1
+                   and (.tests | length > 0)
+                   and (.tests | map(select(.visibility == "public")) | length > 0)
+                   and .limits.fuel > 0
+                   and .limits.wall_ms > 0' "/tmp/$slug.json" > /dev/null
+            echo "ok  $slug"
+
+            # A public-only package must contain no trace of a hidden case.
+            ./tools/target/release/rustly-content package "$slug" --public-only > "/tmp/$slug-public.json"
+            if jq -e '.tests | map(select(.visibility == "hidden")) | length > 0' \
+                 "/tmp/$slug-public.json" > /dev/null; then
+              echo "::error::$slug: a public-only package contains hidden tests"
+              exit 1
+            fi
+            for secret in $(jq -r '.tests[] | select(.visibility == "hidden") | .expected_stdout' "/tmp/$slug.json"); do
+              if grep -qF -- "$secret" "/tmp/$slug-public.json" 2>/dev/null; then
+                echo "::error::$slug: hidden expected output leaked into the public package"
+                exit 1
+              fi
+            done
+            echo "ok  $slug public-only package carries no hidden material"
+          done
+
+  links:
+    name: reference links resolve
+    runs-on: ubuntu-slim
+    # Informational: an upstream site being down must not block a content PR.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Check every cited URL
+        run: |
+          set -uo pipefail
+          failures=0
+          urls=$(grep -rho 'https://[^"]*' content --include='*.json' | sort -u)
+          for url in $urls; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' -L --max-time 20 "$url" || echo 000)
+            if [ "$code" -ge 400 ] || [ "$code" = "000" ]; then
+              echo "::warning::$url returned $code"
+              failures=$((failures + 1))
+            else
+              echo "ok  $code $url"
+            fi
+          done
+          echo "$failures unreachable link(s)"

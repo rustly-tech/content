@@ -1,0 +1,62 @@
+{
+  "format_version": 1,
+  "id": "ownership",
+  "title": "Ownership",
+  "summary": "Moves, borrows, and the fixes for E0382, in the order you reach for them.",
+  "topics": [
+    "ownership",
+    "borrowing"
+  ],
+  "lifecycle": "official",
+  "entries": [
+    {
+      "want": "Let a function read a value without taking it",
+      "code": "fn read(s: &str) {}\nread(&owned);",
+      "note": "Prefer `&str` over `&String`: it accepts both, and string literals too."
+    },
+    {
+      "want": "Let a function modify a value without taking it",
+      "code": "fn edit(s: &mut String) { s.push('!'); }\nedit(&mut owned);",
+      "note": "Only one unique borrow at a time, and none while a shared borrow is alive."
+    },
+    {
+      "want": "Give a value away permanently",
+      "code": "fn consume(s: String) {}\nconsume(owned);",
+      "note": "After this, `owned` is unusable. That is the intent, not an accident."
+    },
+    {
+      "want": "Keep a copy as well",
+      "code": "consume(owned.clone());",
+      "note": "Costs an allocation. Worth it when you mean it; a bad habit when it is a reflex."
+    },
+    {
+      "want": "Return a value from a function",
+      "code": "fn make() -> String { String::from(\"hi\") }",
+      "note": "Returning moves ownership out to the caller. No borrow-checker trouble."
+    },
+    {
+      "want": "Check whether a type is Copy",
+      "code": "// Copy: i32, f64, bool, char, &T, tuples/arrays of Copy\n// Not Copy: String, Vec<T>, Box<T>, File, anything owning a resource"
+    },
+    {
+      "want": "Take a value out of a struct field",
+      "code": "let taken = std::mem::take(&mut holder.field);",
+      "note": "Leaves `Default::default()` behind. Use `mem::replace` to choose what is left."
+    },
+    {
+      "want": "Move a value into a closure",
+      "code": "let handle = std::thread::spawn(move || println!(\"{owned}\"));",
+      "note": "`move` forces capture by value, which is what a thread needs."
+    },
+    {
+      "want": "Share one value between many owners",
+      "code": "use std::rc::Rc;\nlet shared = Rc::new(value);\nlet also = Rc::clone(&shared);",
+      "note": "`Rc` for one thread, `Arc` across threads. Cloning an `Rc` copies a pointer, not the value."
+    },
+    {
+      "want": "Read E0382",
+      "code": "// 1. why it moved      -> \"does not implement the `Copy` trait\"\n// 2. where it moved    -> \"value moved here\"\n// 3. where you used it -> \"value borrowed here after move\"",
+      "note": "Reading all three lines turns guessing into a decision: borrow, clone, or restructure."
+    }
+  ]
+}

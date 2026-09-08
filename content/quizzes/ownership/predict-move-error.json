@@ -1,0 +1,29 @@
+{
+  "format_version": 1,
+  "id": "ownership/predict-move-error",
+  "lesson": "ownership/move-semantics",
+  "prompt": "Before you run this: what does the compiler say?",
+  "code": "fn main() {\n    let a = String::from(\"hello\");\n    let b = a;\n    println!(\"{a}\");\n}\n",
+  "options": [
+    {
+      "text": "error[E0382]: borrow of moved value: `a`",
+      "correct": true
+    },
+    {
+      "text": "It prints `hello`. Both names refer to the same string.",
+      "correct": false,
+      "why_wrong": "That is how a garbage-collected language behaves. Rust allows exactly one owner, so `a` stopped being usable the moment it moved into `b`."
+    },
+    {
+      "text": "It prints `hello` twice, because assignment copies the String.",
+      "correct": false,
+      "why_wrong": "Copying would duplicate the heap text, which is expensive. Rust never does that implicitly - you would have to write `a.clone()`."
+    },
+    {
+      "text": "It compiles but panics at runtime with a use-after-free.",
+      "correct": false,
+      "why_wrong": "This class of bug is caught at compile time, which is the point. Nothing about it is deferred to runtime."
+    }
+  ],
+  "explanation": "`String` owns a heap allocation, so it is not `Copy`. `let b = a;` moves ownership, and using `a` afterwards is E0382. The full diagnostic tells you why the move happened, where it happened, and where you used the value afterwards."
+}

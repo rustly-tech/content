@@ -1,0 +1,5 @@
+# The tooling is a workspace at the repository root so the org's reusable Rust CI
+# workflow works unchanged. Content itself is data, not a crate.
+[workspace]
+resolver = "2"
+members = ["tools"]
