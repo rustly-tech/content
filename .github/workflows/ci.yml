@@ -39,33 +39,33 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           key: content
-          workspaces: tools
 
+      # `tools` is a member of the workspace at the repository root, so the
+      # binary lands in ./target/release, not tools/target/release.
       - name: Build the tooling
-        working-directory: tools
-        run: cargo build --release
+        run: cargo build --release -p rustly-content
 
       - name: Schema, identifier, reference, and attribution validation
-        run: ./tools/target/release/rustly-content validate
+        run: ./target/release/rustly-content validate
 
       # The Rust types are the schema. Committed JSON Schema files are generated
       # from them, so drift is impossible rather than merely discouraged.
       - name: Committed schemas match the Rust types
-        run: ./tools/target/release/rustly-content schemas --check
+        run: ./target/release/rustly-content schemas --check
 
       # Every runnable example declares what it does. A broken-on-purpose example
       # must still fail in the way it claims, or predict-the-error teaches noise.
       - name: Every example does what it claims
-        run: ./tools/target/release/rustly-content check-examples
+        run: ./target/release/rustly-content check-examples
 
       # A Trial whose own reference solution fails is unshippable, and a starter
       # that already compiles when it claims E0382 removes the whole exercise.
       - name: Starters and reference solutions behave as declared
-        run: ./tools/target/release/rustly-content check-trials
+        run: ./target/release/rustly-content check-trials
 
       - name: Build the static search index
         run: |
-          ./tools/target/release/rustly-content index
+          ./target/release/rustly-content index
           test -s dist/search-index.json
           echo "index size: $(wc -c < dist/search-index.json) bytes"
 
@@ -133,11 +133,11 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           key: judge-compat
-          workspaces: tools
 
+      # `tools` is a member of the workspace at the repository root, so the
+      # binary lands in ./target/release, not tools/target/release.
       - name: Build the tooling
-        working-directory: tools
-        run: cargo build --release
+        run: cargo build --release -p rustly-content
 
       # `check-trials` proves a solution is correct. This proves the *package we
       # emit* is one the judge accepts - a different claim, and the one that
@@ -147,7 +147,7 @@ jobs:
           set -euo pipefail
           for trial in content/trials/*/trial.json; do
             slug=$(jq -r .slug "$trial")
-            ./tools/target/release/rustly-content package "$slug" > "/tmp/$slug.json"
+            ./target/release/rustly-content package "$slug" > "/tmp/$slug.json"
             jq -e '.format_version == 1
                    and (.tests | length > 0)
                    and (.tests | map(select(.visibility == "public")) | length > 0)
@@ -156,7 +156,7 @@ jobs:
             echo "ok  $slug"
 
             # A public-only package must contain no trace of a hidden case.
-            ./tools/target/release/rustly-content package "$slug" --public-only > "/tmp/$slug-public.json"
+            ./target/release/rustly-content package "$slug" --public-only > "/tmp/$slug-public.json"
             if jq -e '.tests | map(select(.visibility == "hidden")) | length > 0' \
                  "/tmp/$slug-public.json" > /dev/null; then
               echo "::error::$slug: a public-only package contains hidden tests"

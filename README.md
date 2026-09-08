@@ -63,8 +63,8 @@ cargo run --manifest-path tools/Cargo.toml -- schemas --check  # verify
 ## Working on content
 
 ```sh
-cd tools && cargo build --release && cd ..
-T=./tools/target/release/rustly-content
+cargo build --release -p rustly-content
+T=./target/release/rustly-content
 
 $T validate         # schema, identifiers, references, attribution
 $T check-examples   # compile every example, assert its declared outcome

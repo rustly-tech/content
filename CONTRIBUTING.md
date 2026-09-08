@@ -6,8 +6,8 @@ first. This file covers what is specific to content.
 ## Before you open a PR
 
 ```sh
-cd tools && cargo build --release && cd ..
-T=./tools/target/release/rustly-content
+cargo build --release -p rustly-content
+T=./target/release/rustly-content
 $T validate && $T check-examples && $T check-trials && $T schemas --check
 ```
 
