@@ -375,11 +375,9 @@ pub struct Trial {
     pub statement: String,
     /// Path to the starter code the editor opens with.
     pub starter: String,
-    /// Path to the reference solution.
-    pub reference_solution: String,
     /// What the starter is expected to do before the learner changes anything.
     pub starter_expect: ExpectedOutcome,
-    /// Test cases.
+    /// Public test cases. Trusted evaluation lives outside this repository.
     pub tests: Vec<TestCase>,
     /// Resource limits, if the defaults are not right for this Trial.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -391,24 +389,10 @@ pub struct Trial {
 pub struct TestCase {
     /// Identifier, unique within the Trial.
     pub id: String,
-    /// Whether the learner may see this case.
-    pub visibility: Visibility,
     /// Bytes written to the program's stdin.
     pub stdin: String,
     /// Expected stdout.
     pub expected_stdout: String,
-}
-
-/// Whether a test case is shown to the learner.
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
-)]
-#[serde(rename_all = "snake_case")]
-pub enum Visibility {
-    /// Shown in the UI and runnable locally.
-    Public,
-    /// Authoritative. Never leaves trusted infrastructure.
-    Hidden,
 }
 
 /// Resource limits, mirroring the judge's.

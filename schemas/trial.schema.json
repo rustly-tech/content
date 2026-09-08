@@ -29,10 +29,6 @@
         }
       ]
     },
-    "reference_solution": {
-      "description": "Path to the reference solution.",
-      "type": "string"
-    },
     "slug": {
       "description": "URL slug and identifier.",
       "type": "string"
@@ -54,7 +50,7 @@
       "type": "string"
     },
     "tests": {
-      "description": "Test cases.",
+      "description": "Public test cases. Trusted evaluation lives outside this repository.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/TestCase"
@@ -89,7 +85,6 @@
     "version",
     "statement",
     "starter",
-    "reference_solution",
     "starter_expect",
     "tests"
   ],
@@ -268,15 +263,10 @@
         "stdin": {
           "description": "Bytes written to the program's stdin.",
           "type": "string"
-        },
-        "visibility": {
-          "description": "Whether the learner may see this case.",
-          "$ref": "#/$defs/Visibility"
         }
       },
       "required": [
         "id",
-        "visibility",
         "stdin",
         "expected_stdout"
       ]
@@ -333,21 +323,6 @@
           "description": "Modules, crates, Cargo.",
           "type": "string",
           "const": "tooling"
-        }
-      ]
-    },
-    "Visibility": {
-      "description": "Whether a test case is shown to the learner.",
-      "oneOf": [
-        {
-          "description": "Shown in the UI and runnable locally.",
-          "type": "string",
-          "const": "public"
-        },
-        {
-          "description": "Authoritative. Never leaves trusted infrastructure.",
-          "type": "string",
-          "const": "hidden"
         }
       ]
     }

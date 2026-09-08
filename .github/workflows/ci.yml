@@ -139,9 +139,8 @@ jobs:
       - name: Build the tooling
         run: cargo build --release -p rustly-content
 
-      # `check-trials` proves a solution is correct. This proves the *package we
-      # emit* is one the judge accepts - a different claim, and the one that
-      # breaks silently when a format version moves.
+      # Public CI proves the public package parses. Trusted solutions and hidden
+      # cases are validated only in the private evaluation repository.
       #
       # Written in Python rather than shell on purpose: an expected output is a
       # multi-line string, and word-splitting one in a shell loop compares
@@ -153,36 +152,19 @@ jobs:
           for trial in content/trials/*/trial.json; do
             slug=$(python3 -c "import json,sys;print(json.load(open('$trial'))['slug'])")
             ./target/release/rustly-content package "$slug" > "/tmp/$slug.json"
-            ./target/release/rustly-content package "$slug" --public-only > "/tmp/$slug-public.json"
             python3 - "$slug" <<'PYEOF'
           import json, sys
 
           slug = sys.argv[1]
           full = json.load(open(f"/tmp/{slug}.json"))
-          public = json.load(open(f"/tmp/{slug}-public.json"))
 
           assert full["format_version"] == 1, "unexpected package format version"
           assert full["tests"], "the package has no tests"
-          assert any(t["visibility"] == "public" for t in full["tests"]), "no public test"
+          assert all(t["visibility"] == "public" for t in full["tests"]), "non-public test leaked"
           assert full["limits"]["fuel"] > 0, "fuel is unbounded"
           assert full["limits"]["wall_ms"] > 0, "wall clock is unbounded"
 
-          hidden = [t for t in full["tests"] if t["visibility"] == "hidden"]
-          assert not any(
-              t["visibility"] == "hidden" for t in public["tests"]
-          ), "a public-only package contains hidden tests"
-
-          # Compare whole values. A hidden case's id, input, and expected output
-          # must appear nowhere in what a volunteer worker would receive.
-          blob = json.dumps(public)
-          for test in hidden:
-              for label in ("id", "stdin", "expected_stdout"):
-                  value = test[label]
-                  if len(value.strip()) >= 4 and value in blob:
-                      sys.exit(f"::error::{slug}: hidden {label} leaked into the public package")
-
-          print(f"ok  {slug}: {len(full['tests'])} tests, "
-                f"{len(public['tests'])} public, {len(hidden)} hidden and none leaked")
+          print(f"ok  {slug}: {len(full['tests'])} public tests")
           PYEOF
           done
 

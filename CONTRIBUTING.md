@@ -49,14 +49,13 @@ Check the upstream license permits the excerpt and record it exactly.
 
 ## Adding a Trial
 
-1. `content/trials/<slug>/` with `trial.json`, `statement.md`, `starter.rs`,
-   `solution.rs`.
+1. `content/trials/<slug>/` with `trial.json`, `statement.md`, and `starter.rs`.
 2. `starter_expect` must describe what the starter really does. If it is meant to
    fail with `E0382`, CI checks that it fails with `E0382`.
-3. At least one public test. Add hidden tests too: without them a solution tuned
-   to the visible cases passes, and CI will warn you.
-4. Hidden tests should probe what the public ones do not — multi-byte input,
-   repeated whitespace, boundary sizes.
+3. Add at least one public test here. Put the reference solution and hidden or
+   adversarial cases in the private evaluation repository for the same version.
+4. Hidden tests should probe what the public ones do not, without ever entering
+   a public branch, browser bundle, fork workflow, or public CI artifact.
 5. `version` starts at 1 and increases whenever the tests or the statement change
    meaningfully. A verdict is only meaningful against a specific version.
 

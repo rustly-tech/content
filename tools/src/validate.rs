@@ -502,23 +502,6 @@ fn check_trials(root: &Path, content: &Content, report: &mut ValidationReport) {
             }
         }
 
-        if !trial
-            .tests
-            .iter()
-            .any(|t| t.visibility == Visibility::Public)
-        {
-            report.error(&at, "a Trial must expose at least one public test");
-        }
-        if !trial
-            .tests
-            .iter()
-            .any(|t| t.visibility == Visibility::Hidden)
-        {
-            report.warn(
-                &at,
-                "this Trial has no hidden tests, so a solution tuned to the public cases passes",
-            );
-        }
         if let Some(limits) = trial.limits {
             for (field, value) in [
                 ("wall_ms", limits.wall_ms),
@@ -559,12 +542,6 @@ fn check_files_exist(root: &Path, content: &Content, report: &mut ValidationRepo
     for (path, trial) in content.trials.values() {
         require(path, &trial.statement, "statement", report);
         require(path, &trial.starter, "starter", report);
-        require(
-            path,
-            &trial.reference_solution,
-            "reference solution",
-            report,
-        );
     }
 }
 
@@ -839,7 +816,7 @@ mod tests {
     }
 
     #[test]
-    fn a_trial_without_a_public_test_is_an_error_and_without_a_hidden_one_is_a_warning() {
+    fn a_trial_without_a_public_test_is_an_error() {
         let mut content = Content::default();
         let mut trial = Trial {
             format_version: CONTENT_FORMAT_VERSION,
@@ -852,16 +829,10 @@ mod tests {
             version: 1,
             statement: "statement.md".into(),
             starter: "starter.rs".into(),
-            reference_solution: "solution.rs".into(),
             starter_expect: ExpectedOutcome::CompileError {
                 code: "E0382".into(),
             },
-            tests: vec![TestCase {
-                id: "a".into(),
-                visibility: Visibility::Hidden,
-                stdin: String::new(),
-                expected_stdout: "x\n".into(),
-            }],
+            tests: vec![],
             limits: None,
         };
         content
@@ -871,20 +842,17 @@ mod tests {
         check_trials(Path::new("."), &content, &mut report);
         assert!(report.has_errors(), "no public test must be an error");
 
-        trial.tests[0].visibility = Visibility::Public;
+        trial.tests.push(TestCase {
+            id: "a".into(),
+            stdin: String::new(),
+            expected_stdout: "x\n".into(),
+        });
         content
             .trials
             .insert("t".into(), (PathBuf::from("trial.json"), trial));
         let mut report = ValidationReport::default();
         check_trials(Path::new("."), &content, &mut report);
         assert!(!report.has_errors());
-        assert!(
-            report
-                .diagnostics
-                .iter()
-                .any(|d| d.message.contains("no hidden tests")),
-            "no hidden test should warn"
-        );
     }
 
     #[test]
@@ -905,18 +873,15 @@ mod tests {
                     version: 1,
                     statement: "statement.md".into(),
                     starter: "starter.rs".into(),
-                    reference_solution: "solution.rs".into(),
                     starter_expect: ExpectedOutcome::Compiles,
                     tests: vec![
                         TestCase {
                             id: "a".into(),
-                            visibility: Visibility::Public,
                             stdin: String::new(),
                             expected_stdout: "x\n".into(),
                         },
                         TestCase {
                             id: "b".into(),
-                            visibility: Visibility::Hidden,
                             stdin: String::new(),
                             expected_stdout: "y\n".into(),
                         },

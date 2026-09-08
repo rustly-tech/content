@@ -68,15 +68,14 @@ an example that outlives its source fails the build.
 
 ## Trial — `content/trials/<slug>/trial.json`
 
-Metadata, `starter_expect`, and test cases. Each test has an `id`, a
-`visibility` (`public` or `hidden`), `stdin`, and `expected_stdout`.
+Metadata, `starter_expect`, and public test cases. Each test has an `id`,
+`stdin`, and `expected_stdout`.
 
-Hidden tests are stored here and are removed from any package sent to a
-non-trusted judge worker. They are deleted rather than flagged: a flag protects
-nothing once the bytes are on someone else's machine.
+Reference solutions and hidden or adversarial cases are trusted evaluation
+material and never belong in this public repository. They are versioned in the
+private evaluation repository against the Trial's `slug` and `version`.
 
-`rustly-content package <slug>` emits the judge's Trial package format;
-`--public-only` emits the form a volunteer worker receives.
+`rustly-content package <slug>` emits the public judge Trial package format.
 
 ## Search index
 

@@ -1,1 +1,0 @@
-/Users/ducnguyen/Documents/Rustly/content/target/debug/rustly-content: /Users/ducnguyen/Documents/Rustly/content/tools/src/index.rs /Users/ducnguyen/Documents/Rustly/content/tools/src/lib.rs /Users/ducnguyen/Documents/Rustly/content/tools/src/main.rs /Users/ducnguyen/Documents/Rustly/content/tools/src/model.rs /Users/ducnguyen/Documents/Rustly/content/tools/src/validate.rs

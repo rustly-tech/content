@@ -32,8 +32,7 @@ enum Command_ {
     /// Compile every runnable example and assert it does what it claims.
     CheckExamples,
 
-    /// Build and run every Trial's reference solution against its own tests,
-    /// and check that each starter behaves as declared.
+    /// Check that every Trial starter behaves as declared.
     CheckTrials,
 
     /// Regenerate `schemas/` from the Rust types.
@@ -54,9 +53,6 @@ enum Command_ {
     Package {
         /// Trial slug.
         slug: String,
-        /// Emit public tests only, as a non-trusted worker would receive.
-        #[arg(long)]
-        public_only: bool,
     },
 }
 
@@ -162,22 +158,6 @@ fn main() -> anyhow::Result<()> {
                         println!("FAIL  {slug} starter\n      {why}");
                     }
                 }
-
-                // The reference solution must pass every test, including hidden
-                // ones. A Trial whose own solution fails is unshippable.
-                let solution =
-                    std::fs::read_to_string(directory.join(&trial.reference_solution))
-                        .with_context(|| format!("reading the reference solution for {slug}"))?;
-                match run_against_tests(workspace.path(), &solution, &trial.tests) {
-                    Ok(()) => println!(
-                        "ok    {slug} reference solution passes {} test(s)",
-                        trial.tests.len()
-                    ),
-                    Err(why) => {
-                        failures += 1;
-                        println!("FAIL  {slug} reference solution\n      {why}");
-                    }
-                }
             }
 
             println!(
@@ -249,13 +229,13 @@ fn main() -> anyhow::Result<()> {
             );
         }
 
-        Command_::Package { slug, public_only } => {
+        Command_::Package { slug } => {
             let mut report = validate::ValidationReport::default();
             let content = validate::load(&root.join("content"), &mut report);
             let Some((path, trial)) = content.trials.get(&slug) else {
                 bail!("no Trial with slug `{slug}`");
             };
-            let package = build_package(path.parent().unwrap_or(&root), trial, public_only)?;
+            let package = build_package(path.parent().unwrap_or(&root), trial)?;
             println!("{}", serde_json::to_string_pretty(&package)?);
         }
     }
@@ -327,72 +307,6 @@ fn check_example(workspace: &Path, code: &str, expect: &ExpectedOutcome) -> Resu
     }
 }
 
-/// Compile `code` and run it against every test case.
-fn run_against_tests(workspace: &Path, code: &str, tests: &[TestCase]) -> Result<(), String> {
-    use std::io::Write as _;
-
-    let source = workspace.join("solution.rs");
-    let binary = workspace.join("solution.bin");
-    std::fs::write(&source, code).map_err(|e| format!("cannot write the solution: {e}"))?;
-
-    let build = Command::new("rustc")
-        .args(["--edition", "2021", "-O", "-o"])
-        .arg(&binary)
-        .arg(&source)
-        .output()
-        .map_err(|e| format!("cannot run rustc: {e}"))?;
-    if !build.status.success() {
-        return Err(format!(
-            "the reference solution does not compile:\n{}",
-            indent(String::from_utf8_lossy(&build.stderr).trim())
-        ));
-    }
-
-    for test in tests {
-        let mut child = Command::new(&binary)
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .spawn()
-            .map_err(|e| format!("cannot run the solution: {e}"))?;
-        child
-            .stdin
-            .as_mut()
-            .expect("stdin was piped")
-            .write_all(test.stdin.as_bytes())
-            .map_err(|e| format!("cannot write stdin for `{}`: {e}", test.id))?;
-
-        let output = child
-            .wait_with_output()
-            .map_err(|e| format!("cannot collect output for `{}`: {e}", test.id))?;
-        if !output.status.success() {
-            return Err(format!("test `{}`: the solution exited non-zero", test.id));
-        }
-
-        // Same comparison the judge's default checker uses: trailing whitespace
-        // on each line is ignored, so a checker mismatch here cannot make CI
-        // disagree with production judging.
-        let actual = String::from_utf8_lossy(&output.stdout);
-        if normalise(&actual) != normalise(&test.expected_stdout) {
-            return Err(format!(
-                "test `{}`: expected {:?}, got {:?}",
-                test.id,
-                test.expected_stdout.trim_end(),
-                actual.trim_end()
-            ));
-        }
-    }
-    Ok(())
-}
-
-fn normalise(text: &str) -> Vec<String> {
-    let mut lines: Vec<String> = text.lines().map(|l| l.trim_end().to_owned()).collect();
-    while lines.last().is_some_and(|l| l.is_empty()) {
-        lines.pop();
-    }
-    lines
-}
-
 fn indent(text: &str) -> String {
     text.lines()
         .map(|l| format!("      {l}"))
@@ -432,21 +346,13 @@ struct JudgeTest {
     expected_stdout: String,
 }
 
-fn build_package(
-    _directory: &Path,
-    trial: &Trial,
-    public_only: bool,
-) -> anyhow::Result<JudgePackage> {
+fn build_package(_directory: &Path, trial: &Trial) -> anyhow::Result<JudgePackage> {
     let tests = trial
         .tests
         .iter()
-        .filter(|t| !public_only || t.visibility == Visibility::Public)
         .map(|t| JudgeTest {
             id: t.id.clone(),
-            visibility: match t.visibility {
-                Visibility::Public => "public",
-                Visibility::Hidden => "hidden",
-            },
+            visibility: "public",
             stdin: t.stdin.clone(),
             expected_stdout: t.expected_stdout.clone(),
         })
