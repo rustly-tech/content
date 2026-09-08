@@ -142,33 +142,48 @@ jobs:
       # `check-trials` proves a solution is correct. This proves the *package we
       # emit* is one the judge accepts - a different claim, and the one that
       # breaks silently when a format version moves.
+      #
+      # Written in Python rather than shell on purpose: an expected output is a
+      # multi-line string, and word-splitting one in a shell loop compares
+      # meaningless fragments. The first version of this check "found" a leak
+      # because the fragment `out` appears in the key `expected_stdout`.
       - name: Every emitted package parses as a judge Trial package
         run: |
           set -euo pipefail
           for trial in content/trials/*/trial.json; do
-            slug=$(jq -r .slug "$trial")
+            slug=$(python3 -c "import json,sys;print(json.load(open('$trial'))['slug'])")
             ./target/release/rustly-content package "$slug" > "/tmp/$slug.json"
-            jq -e '.format_version == 1
-                   and (.tests | length > 0)
-                   and (.tests | map(select(.visibility == "public")) | length > 0)
-                   and .limits.fuel > 0
-                   and .limits.wall_ms > 0' "/tmp/$slug.json" > /dev/null
-            echo "ok  $slug"
-
-            # A public-only package must contain no trace of a hidden case.
             ./target/release/rustly-content package "$slug" --public-only > "/tmp/$slug-public.json"
-            if jq -e '.tests | map(select(.visibility == "hidden")) | length > 0' \
-                 "/tmp/$slug-public.json" > /dev/null; then
-              echo "::error::$slug: a public-only package contains hidden tests"
-              exit 1
-            fi
-            for secret in $(jq -r '.tests[] | select(.visibility == "hidden") | .expected_stdout' "/tmp/$slug.json"); do
-              if grep -qF -- "$secret" "/tmp/$slug-public.json" 2>/dev/null; then
-                echo "::error::$slug: hidden expected output leaked into the public package"
-                exit 1
-              fi
-            done
-            echo "ok  $slug public-only package carries no hidden material"
+            python3 - "$slug" <<'PYEOF'
+          import json, sys
+
+          slug = sys.argv[1]
+          full = json.load(open(f"/tmp/{slug}.json"))
+          public = json.load(open(f"/tmp/{slug}-public.json"))
+
+          assert full["format_version"] == 1, "unexpected package format version"
+          assert full["tests"], "the package has no tests"
+          assert any(t["visibility"] == "public" for t in full["tests"]), "no public test"
+          assert full["limits"]["fuel"] > 0, "fuel is unbounded"
+          assert full["limits"]["wall_ms"] > 0, "wall clock is unbounded"
+
+          hidden = [t for t in full["tests"] if t["visibility"] == "hidden"]
+          assert not any(
+              t["visibility"] == "hidden" for t in public["tests"]
+          ), "a public-only package contains hidden tests"
+
+          # Compare whole values. A hidden case's id, input, and expected output
+          # must appear nowhere in what a volunteer worker would receive.
+          blob = json.dumps(public)
+          for test in hidden:
+              for label in ("id", "stdin", "expected_stdout"):
+                  value = test[label]
+                  if len(value.strip()) >= 4 and value in blob:
+                      sys.exit(f"::error::{slug}: hidden {label} leaked into the public package")
+
+          print(f"ok  {slug}: {len(full['tests'])} tests, "
+                f"{len(public['tests'])} public, {len(hidden)} hidden and none leaked")
+          PYEOF
           done
 
   links:
