@@ -28,7 +28,7 @@ cargo test --manifest-path tools/Cargo.toml
 ```
 
 The validator checks schemas, links, examples, expected compiler diagnostics,
-Trial solutions, and the generated search index.
+public Trial cases, and the generated search index.
 
 ## License
 

@@ -1,6 +1,6 @@
 [package]
 name = "rustly-content"
-description = "Validation, example compilation, reference-solution checking, and search-index generation for Rustly content."
+description = "Validation, example compilation, and search-index generation for Rustly content."
 version = "0.1.0"
 edition = "2021"
 # MSRV is set by our dependency floor and enforced by CI.
